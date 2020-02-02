@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <style>
+    body { margin:0;position:fixed;top:0;right:0;bottom:0;left:0;}
+    p {font: caption;}
+    .line {
+        fill: none;
+        stroke-width: 3px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Data visualization | Stocks Data<h1>
+<p>This work consists in making an interactive visualization ( a line chart ) of the stock data of 4 companies in a web page using java script. The work is done as part of an academic deliverable. </p>
+<p>x:Date , y:Price</p>
+
+
+  
+<div></div>
+  
+<script>
+  
+  // Margins
+  var margin = {top: 20, right: 0, bottom: 140, left: 40};
+  
+  var width = 1500 - margin.left - margin.right,
+    height = 800- margin.top - margin.bottom;
+  
+  //SVG
+  var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+   .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+  var parseTime  = d3.timeParse("%b %Y")
+  
+  var color = ["red","black","blue","green"] 
+
+  
+  d3.csv('data/stocks.csv', function(error, raw) {
+    
+     var t = d3.scaleTime()
+          .domain(d3.extent(raw, function(d) { return d.date; }))
+          .range([margin.left, width + margin.left])
+      var y = d3.scaleLinear()
+          .domain([
+            
+             d3.min(raw, function(d) { return d.price; })
+            , 
+                   d3.max(raw, function(d) { return d.price; })])
+          .range([height ,0 ])
+       
+    
+    var symbols = [];
+    
+    var data = []
+    
+    
+    raw.forEach(function(d, i) {
+      
+      if(symbols.indexOf(d.symbol) < 0) {
+        symbols.push(d.symbol)
+        data[symbols.indexOf(d.symbol)] = [];
+      }
+      
+     
+      d.value = +d.price;     
+ 
+      
+      d.date = parseTime(d.date)
+      data[symbols.indexOf(d.symbol)].push(d);
+    });
+    
+    
+    t.domain(d3.extent(raw, function(d) {
+      return d.date;
+    }))
+    
+    y.domain([0, d3.max(raw, function(d) {
+      return d.value;
+    })])
+    
+    
+    var xAxis = d3.axisBottom()
+      .scale(t);
+
+    var yAxis = d3.axisLeft()
+      .scale(y);
+    
+     var legend = svg.selectAll('g')
+      .data(symbols)
+      .enter()
+      .append('g')
+      .attr('class', 'legend');
+
+    legend.append('rect')
+      .attr('x', width -110)
+      .attr('y', function(d, i) {
+        return i * 20;
+      })
+      .attr('width', 10)
+      .attr('height', 10)
+      .style('fill', function(d,i) {
+        return color[i];
+      });
+
+    legend.append('text')
+      .attr('x', width -80)
+      .attr('y', function(d, i) {
+        return (i * 20) + 9;
+      })
+      .text(function(d,i) {
+        return symbols[i];
+      });
+    
+    
+    var line = d3.line()
+      .x(function(d) { return t(d.date); }) 
+      .y(function(d) { return y(d.price); }) 
+
+    svg.selectAll(".line").data(data).enter()
+      .append("path")
+      .attr("class", "line")
+      .attr("d", function(d) { return line(d); })  
+      .attr("stroke", function(d, i) { return color[i]; })
+      .attr("fill", "none")
+      .style('opacity','0.3')
+        
+      .on("mouseover", function(e){
+              d3.selectAll('.line')
+                    .style('opacity',function(d){ 
+                          if(d == e){ // e data 
+                             return '1'
+                          }else{
+                          return '0.3'
+                          }
+              })
+              })
+        .on("mouseout", function(d){
+                d3.select(this)
+                      .style('opacity',0.3)
+              });
+    
+    svg.append('g')
+      .attr('transform', 'translate(0,' + height + ')')
+      .attr('class', 'x axis')
+      .call(xAxis);
+
+    svg.append('g')
+      .attr('transform', 'translate(0,' + 0 + ')')
+      .attr('class', 'y axis')
+      .call(yAxis);
+    
+    svg.append("text")
+      .text("Fly over the curve to highlight it!")
+      .attr("y", 50)
+      .attr("x", 500)
+      .attr("font-size", 20)
+      .attr("font-family", "monospace")
+    
+    
+ 
+  });
+  
+  
+ </script>
+ 
+</body>
